@@ -1,13 +1,13 @@
 {
   "name": "runfit",
-  "displayName": "Runfit", 
+  "displayName": "RunFit",
   "version": "1.0.0",
-  "description": "Runfit - Your personal running companion",
+  "description": "RunFit - Your personal running companion",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Runfit Team",
+  "author": "RunFit Team",
   "license": "Apache-2.0",
   "devDependencies": {
     "cordova": "^12.0.0",
