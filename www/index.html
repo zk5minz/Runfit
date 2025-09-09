@@ -1,554 +1,573 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Runfit - AI 기반 개인 맞춤 피트니스</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+// Cordova 앱 초기화
+document.addEventListener('deviceready', onDeviceReady, false);
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            overflow-x: hidden;
-        }
+// 글로벌 변수들
+let isRunning = false;
+let startTime = null;
+let runningTimer = null;
+let currentPosition = null;
+let watchId = null;
+let runningData = {
+    time: 0,
+    distance: 0,
+    pace: 0,
+    calories: 0
+};
 
-        /* 배경 그라디언트 애니메이션 */
-        .bg-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: -2;
-            animation: gradientShift 8s ease-in-out infinite;
-        }
-
-        @keyframes gradientShift {
-            0%, 100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-            25% { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-            50% { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-            75% { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-        }
-
-        /* 떠다니는 원들 */
-        .floating-circles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .circle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            animation: float 20s infinite linear;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(100vh) rotate(0deg); }
-            100% { transform: translateY(-100vh) rotate(360deg); }
-        }
-
-        /* 헤더 */
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            z-index: 1000;
-            padding: 1rem 0;
-            transition: all 0.3s ease;
-        }
-
-        nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 2rem;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .logo::before {
-            content: "🏃";
-            font-size: 2rem;
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: white;
-            transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* 메인 섹션 */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 2rem;
-            position: relative;
-        }
-
-        .hero-content {
-            max-width: 800px;
-            color: white;
-            z-index: 10;
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.2;
-            animation: slideUp 1s ease-out;
-        }
-
-        .hero p {
-            font-size: 1.5rem;
-            margin-bottom: 2.5rem;
-            opacity: 0.9;
-            animation: slideUp 1s ease-out 0.3s both;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: slideUp 1s ease-out 0.6s both;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        /* 기능 섹션 */
-        .features {
-            padding: 6rem 2rem;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-        }
-
-        .features-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 3rem;
-            color: white;
-            margin-bottom: 3rem;
-            font-weight: 700;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            padding: 2.5rem;
-            border-radius: 20px;
-            text-align: center;
-            color: white;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-            display: block;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        /* 애니메이션 */
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* 반응형 */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero p {
-                font-size: 1.2rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .features h2 {
-                font-size: 2rem;
-            }
-
-            nav {
-                padding: 0 1rem;
-            }
-        }
-
-        /* 스크롤 인디케이터 */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateX(-50%) translateY(0);
-            }
-            40% {
-                transform: translateX(-50%) translateY(-10px);
-            }
-            60% {
-                transform: translateX(-50%) translateY(-5px);
-            }
-        }
-
-        /* 파티클 효과 */
-        .particle {
-            position: fixed;
-            width: 4px;
-            height: 4px;
-            background: white;
-            border-radius: 50%;
-            pointer-events: none;
-            opacity: 0.7;
-            animation: particle-float 15s infinite linear;
-        }
-
-        @keyframes particle-float {
-            0% {
-                transform: translateY(100vh) translateX(0px);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.7;
-            }
-            90% {
-                opacity: 0.7;
-            }
-            100% {
-                transform: translateY(-100vh) translateX(100px);
-                opacity: 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- 배경 그라디언트 -->
-    <div class="bg-gradient"></div>
+function onDeviceReady() {
+    console.log('Device is ready');
     
-    <!-- 떠다니는 원들 -->
-    <div class="floating-circles" id="circles"></div>
+    // UI 상태 변경
+    document.querySelector('.listening').style.display = 'none';
+    document.querySelector('.received').style.display = 'block';
+    
+    // 3초 후 상태 표시 숨기기
+    setTimeout(() => {
+        document.getElementById('deviceStatus').style.display = 'none';
+    }, 3000);
+    
+    // 앱 초기화
+    initializeApp();
+}
 
-    <!-- 헤더 -->
-    <header>
-        <nav>
-            <a href="#" class="logo">Runfit</a>
-            <ul class="nav-links">
-                <li><a href="#home">홈</a></li>
-                <li><a href="#features">기능</a></li>
-                <li><a href="#download">다운로드</a></li>
-                <li><a href="#contact">문의</a></li>
-            </ul>
-        </nav>
-    </header>
+// 앱 초기화 함수
+function initializeApp() {
+    console.log('Running app initialized');
+    
+    // UI 이벤트 리스너 등록
+    setupEventListeners();
+    
+    // 시각적 효과 초기화
+    createFloatingCircles();
+    createParticles();
+    addCardEffects();
+    
+    // 스크롤 이벤트
+    window.addEventListener('scroll', handleScroll);
+}
 
-    <!-- 메인 섹션 -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>AI와 함께하는<br>스마트 피트니스</h1>
-            <p>개인 맞춤형 운동 플랜으로 건강한 라이프스타일을 시작하세요</p>
-            <div class="cta-buttons">
-                <a href="#" class="btn btn-primary">지금 시작하기</a>
-                <a href="#" class="btn btn-secondary">더 알아보기</a>
-            </div>
-        </div>
-        <div class="scroll-indicator">
-            <span>↓ 스크롤하여 더 보기</span>
-        </div>
-    </section>
-
-    <!-- 기능 섹션 -->
-    <section class="features" id="features">
-        <div class="features-container">
-            <h2>주요 기능</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <span class="feature-icon">🗺️</span>
-                    <h3>GPS 맵 트래킹</h3>
-                    <p>정확한 GPS 기반으로 러닝 경로를 실시간으로 지도에 표시하고 기록합니다.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📏</span>
-                    <h3>실시간 거리 측정</h3>
-                    <p>러닝 중 실시간으로 이동 거리를 정확하게 측정하여 표시합니다.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">⏱️</span>
-                    <h3>시간 & 페이스 추적</h3>
-                    <p>총 러닝 시간과 현재 페이스, 평균 페이스를 실시간으로 확인할 수 있습니다.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">🔥</span>
-                    <h3>칼로리 계산</h3>
-                    <p>러닝 강도와 시간을 바탕으로 소모된 칼로리를 자동으로 계산합니다.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">💓</span>
-                    <h3>심박수 모니터링</h3>
-                    <p>실시간 심박수 측정으로 운동 강도를 효과적으로 관리할 수 있습니다.</p>
-                </div>
-                <div class="feature-card">
-                    <span class="feature-icon">📅</span>
-                    <h3>기록 관리</h3>
-                    <p>달력에서 날짜별 러닝 기록을 확인하고, 월별/연도별 통계를 제공합니다.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <script>
-        // 떠다니는 원들 생성
-        function createFloatingCircles() {
-            const container = document.getElementById('circles');
-            const numberOfCircles = 15;
-
-            for (let i = 0; i < numberOfCircles; i++) {
-                const circle = document.createElement('div');
-                circle.className = 'circle';
-                
-                const size = Math.random() * 100 + 20;
-                circle.style.width = `${size}px`;
-                circle.style.height = `${size}px`;
-                circle.style.left = `${Math.random() * 100}%`;
-                circle.style.animationDelay = `${Math.random() * 20}s`;
-                circle.style.animationDuration = `${Math.random() * 20 + 15}s`;
-                
-                container.appendChild(circle);
-            }
-        }
-
-        // 파티클 효과
-        function createParticles() {
-            setInterval(() => {
-                if (Math.random() > 0.7) {
-                    const particle = document.createElement('div');
-                    particle.className = 'particle';
-                    particle.style.left = `${Math.random() * 100}%`;
-                    document.body.appendChild(particle);
-
-                    setTimeout(() => {
-                        particle.remove();
-                    }, 15000);
-                }
-            }, 300);
-        }
-
-        // 스크롤 효과
-        function handleScroll() {
-            const header = document.querySelector('header');
-            const scrolled = window.pageYOffset;
-            
-            if (scrolled > 100) {
-                header.style.background = 'rgba(255, 255, 255, 0.15)';
-            } else {
-                header.style.background = 'rgba(255, 255, 255, 0.1)';
-            }
-        }
-
-        // 카드 호버 효과
-        function addCardEffects() {
-            const cards = document.querySelectorAll('.feature-card');
-            
-            cards.forEach(card => {
-                card.addEventListener('mouseenter', () => {
-                    card.style.transform = 'translateY(-10px) scale(1.02)';
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    // 러닝 관련 버튼들
+    document.getElementById('startRunning').addEventListener('click', startRunning);
+    document.getElementById('stopRunning').addEventListener('click', stopRunning);
+    document.getElementById('pauseRunning').addEventListener('click', pauseRunning);
+    document.getElementById('viewHistory').addEventListener('click', viewHistory);
+    
+    // 네비게이션 링크들
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
-                
-                card.addEventListener('mouseleave', () => {
-                    card.style.transform = 'translateY(0) scale(1)';
-                });
-            });
-        }
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', () => {
-            createFloatingCircles();
-            createParticles();
-            addCardEffects();
-            window.addEventListener('scroll', handleScroll);
-        });
-
-        // 부드러운 스크롤
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // 버튼 클릭 효과
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const ripple = document.createElement('span');
-                ripple.style.position = 'absolute';
-                ripple.style.width = '0';
-                ripple.style.height = '0';
-                ripple.style.borderRadius = '50%';
-                ripple.style.background = 'rgba(255, 255, 255, 0.5)';
-                ripple.style.transform = 'scale(0)';
-                ripple.style.animation = 'ripple 0.6s linear';
-                
-                this.appendChild(ripple);
-                
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            });
-        });
-
-        // 리플 애니메이션 CSS 추가
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes ripple {
-                to {
-                    transform: scale(4);
-                    opacity: 0;
-                }
             }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
+        });
+    });
+
+    // 버튼 리플 효과
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            ripple.style.position = 'absolute';
+            ripple.style.width = '0';
+            ripple.style.height = '0';
+            ripple.style.borderRadius = '50%';
+            ripple.style.background = 'rgba(255, 255, 255, 0.5)';
+            ripple.style.transform = 'scale(0)';
+            ripple.style.animation = 'ripple 0.6s linear';
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+
+    // 앱 일시정지/재개 이벤트
+    document.addEventListener('pause', onPause, false);
+    document.addEventListener('resume', onResume, false);
+}
+
+// 러닝 시작
+function startRunning() {
+    console.log('Starting running session');
+    
+    if (navigator.geolocation) {
+        // GPS 권한 요청 및 위치 추적 시작
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                console.log('GPS 초기 위치 획득 성공');
+                currentPosition = position;
+                
+                // 러닝 화면으로 전환
+                showRunningScreen();
+                
+                // 러닝 세션 시작
+                isRunning = true;
+                startTime = new Date().getTime();
+                
+                // 위치 추적 시작
+                startLocationTracking();
+                
+                // 타이머 시작
+                startTimer();
+                
+            },
+            function(error) {
+                console.log('GPS 오류:', error.message);
+                alert('GPS를 사용할 수 없습니다. 위치 권한을 확인해주세요.');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000
+            }
+        );
+    } else {
+        alert('이 디바이스는 GPS를 지원하지 않습니다.');
+    }
+}
+
+// 러닝 화면 표시
+function showRunningScreen() {
+    document.getElementById('runningScreen').style.display = 'flex';
+    document.querySelector('.hero').style.display = 'none';
+    document.querySelector('.features').style.display = 'none';
+}
+
+// 메인 화면으로 돌아가기
+function showMainScreen() {
+    document.getElementById('runningScreen').style.display = 'none';
+    document.querySelector('.hero').style.display = 'flex';
+    document.querySelector('.features').style.display = 'block';
+}
+
+// 위치 추적 시작
+function startLocationTracking() {
+    if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(
+            function(position) {
+                updateRunningData(position);
+            },
+            function(error) {
+                console.log('위치 추적 오류:', error.message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 1000
+            }
+        );
+    }
+}
+
+// 러닝 데이터 업데이트
+function updateRunningData(position) {
+    if (!currentPosition) return;
+    
+    // 거리 계산 (하버사인 공식 사용)
+    const distance = calculateDistance(
+        currentPosition.coords.latitude,
+        currentPosition.coords.longitude,
+        position.coords.latitude,
+        position.coords.longitude
+    );
+    
+    runningData.distance += distance;
+    currentPosition = position;
+    
+    // 페이스 계산 (분/km)
+    if (runningData.distance > 0 && runningData.time > 0) {
+        runningData.pace = (runningData.time / 60) / runningData.distance;
+    }
+    
+    // 칼로리 계산 (대략적인 공식: 거리(km) * 체중(kg) * 1.036)
+    // 여기서는 평균 체중 70kg로 가정
+    runningData.calories = Math.round(runningData.distance * 70 * 1.036);
+    
+    // UI 업데이트
+    updateRunningUI();
+}
+
+// 거리 계산 함수 (하버사인 공식)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // 지구 반지름 (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// 타이머 시작
+function startTimer() {
+    runningTimer = setInterval(() => {
+        if (isRunning) {
+            runningData.time = Math.floor((new Date().getTime() - startTime) / 1000);
+            updateRunningUI();
+        }
+    }, 1000);
+}
+
+// 러닝 UI 업데이트
+function updateRunningUI() {
+    // 시간 포맷팅 (HH:MM:SS)
+    const hours = Math.floor(runningData.time / 3600);
+    const minutes = Math.floor((runningData.time % 3600) / 60);
+    const seconds = runningData.time % 60;
+    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    // 페이스 포맷팅 (M'SS"/km)
+    const paceMinutes = Math.floor(runningData.pace);
+    const paceSeconds = Math.floor((runningData.pace - paceMinutes) * 60);
+    const paceString = `${paceMinutes}'${paceSeconds.toString().padStart(2, '0')}"/km`;
+    
+    // UI 요소들 업데이트
+    document.getElementById('runningTime').textContent = timeString;
+    document.getElementById('runningDistance').textContent = `${runningData.distance.toFixed(2)} km`;
+    document.getElementById('runningPace').textContent = paceString;
+    document.getElementById('runningCalories').textContent = `${runningData.calories} kcal`;
+}
+
+// 러닝 정지
+function stopRunning() {
+    console.log('Stopping running session');
+    
+    isRunning = false;
+    
+    // 타이머 정지
+    if (runningTimer) {
+        clearInterval(runningTimer);
+        runningTimer = null;
+    }
+    
+    // 위치 추적 정지
+    if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    
+    // 러닝 데이터 저장
+    saveRunningSession();
+    
+    // 메인 화면으로 돌아가기
+    showMainScreen();
+    
+    // 데이터 초기화
+    resetRunningData();
+    
+    alert(`러닝 완료!\n시간: ${document.getElementById('runningTime').textContent}\n거리: ${document.getElementById('runningDistance').textContent}\n칼로리: ${document.getElementById('runningCalories').textContent}`);
+}
+
+// 러닝 일시정지/재개
+function pauseRunning() {
+    const pauseBtn = document.getElementById('pauseRunning');
+    
+    if (isRunning) {
+        // 일시정지
+        isRunning = false;
+        pauseBtn.textContent = '재개';
+        pauseBtn.className = 'btn btn-primary';
+        console.log('Running paused');
+    } else {
+        // 재개
+        isRunning = true;
+        startTime = new Date().getTime() - (runningData.time * 1000);
+        pauseBtn.textContent = '일시정지';
+        pauseBtn.className = 'btn btn-secondary';
+        console.log('Running resumed');
+    }
+}
+
+// 러닝 데이터 초기화
+function resetRunningData() {
+    runningData = {
+        time: 0,
+        distance: 0,
+        pace: 0,
+        calories: 0
+    };
+    currentPosition = null;
+    startTime = null;
+}
+
+// 러닝 세션 저장 (로컬 스토리지 대신 메모리에 저장)
+let runningSessions = [];
+
+function saveRunningSession() {
+    const session = {
+        id: new Date().getTime(),
+        date: new Date().toISOString(),
+        time: runningData.time,
+        distance: runningData.distance,
+        pace: runningData.pace,
+        calories: runningData.calories
+    };
+    
+    runningSessions.push(session);
+    console.log('러닝 세션 저장됨:', session);
+}
+
+// 기록 보기
+function viewHistory() {
+    if (runningSessions.length === 0) {
+        alert('저장된 러닝 기록이 없습니다.');
+        return;
+    }
+    
+    let historyText = '러닝 기록:\n\n';
+    runningSessions.forEach((session, index) => {
+        const date = new Date(session.date).toLocaleDateString('ko-KR');
+        const time = formatTime(session.time);
+        historyText += `${index + 1}. ${date}\n`;
+        historyText += `   시간: ${time}\n`;
+        historyText += `   거리: ${session.distance.toFixed(2)}km\n`;
+        historyText += `   칼로리: ${session.calories}kcal\n\n`;
+    });
+    
+    alert(historyText);
+}
+
+// 시간 포맷팅 함수
+function formatTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// 떠다니는 원들 생성
+function createFloatingCircles() {
+    const container = document.getElementById('circles');
+    const numberOfCircles = 15;
+
+    for (let i = 0; i < numberOfCircles; i++) {
+        const circle = document.createElement('div');
+        circle.className = 'circle';
+        
+        const size = Math.random() * 100 + 20;
+        circle.style.width = `${size}px`;
+        circle.style.height = `${size}px`;
+        circle.style.left = `${Math.random() * 100}%`;
+        circle.style.animationDelay = `${Math.random() * 20}s`;
+        circle.style.animationDuration = `${Math.random() * 20 + 15}s`;
+        
+        container.appendChild(circle);
+    }
+}
+
+// 파티클 효과
+function createParticles() {
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = `${Math.random() * 100}%`;
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 15000);
+        }
+    }, 300);
+}
+
+// 스크롤 효과
+function handleScroll() {
+    const header = document.querySelector('header');
+    const scrolled = window.pageYOffset;
+    
+    if (scrolled > 100) {
+        header.style.background = 'rgba(255, 255, 255, 0.15)';
+    } else {
+        header.style.background = 'rgba(255, 255, 255, 0.1)';
+    }
+}
+
+// 카드 호버 효과
+function addCardEffects() {
+    const cards = document.querySelectorAll('.feature-card');
+    
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0) scale(1)';
+        });
+        
+        // 카드 클릭 이벤트
+        card.addEventListener('click', () => {
+            const feature = card.getAttribute('data-feature');
+            handleFeatureClick(feature);
+        });
+    });
+}
+
+// 기능 카드 클릭 처리
+function handleFeatureClick(feature) {
+    let message = '';
+    
+    switch(feature) {
+        case 'gps':
+            message = 'GPS 트래킹 기능:\n- 실시간 위치 추적\n- 경로 기록\n- 정확한 거리 측정';
+            break;
+        case 'distance':
+            message = '거리 측정 기능:\n- 실시간 거리 계산\n- 누적 거리 표시\n- 목표 거리 설정';
+            break;
+        case 'time':
+            message = '시간 & 페이스 기능:\n- 실시간 시간 측정\n- 현재/평균 페이스 계산\n- 랩 타임 기록';
+            break;
+        case 'calories':
+            message = '칼로리 계산 기능:\n- 실시간 칼로리 소모량\n- 개인 정보 기반 계산\n- 목표 칼로리 설정';
+            break;
+        case 'heartrate':
+            message = '심박수 모니터링:\n- 실시간 심박수 측정\n- 운동 강도 분석\n- 심박수 존 표시';
+            break;
+        case 'history':
+            message = '기록 관리 기능:\n- 모든 운동 기록 저장\n- 통계 및 분석\n- 진행 상황 추적';
+            break;
+        default:
+            message = '더 많은 기능이 준비되어 있습니다!';
+    }
+    
+    alert(message);
+}
+
+// 앱 일시정지 처리
+function onPause() {
+    console.log('앱이 일시정지됨');
+    
+    // 러닝 중이면 자동으로 일시정지
+    if (isRunning) {
+        pauseRunning();
+    }
+}
+
+// 앱 재개 처리
+function onResume() {
+    console.log('앱이 재개됨');
+    
+    // 위치 추적이 활성화되어 있으면 재시작
+    if (watchId !== null) {
+        startLocationTracking();
+    }
+}
+
+// DOM이 로드된 후 실행 (웹 환경에서의 폴백)
+document.addEventListener('DOMContentLoaded', () => {
+    // Cordova 환경이 아닌 경우 직접 초기화
+    if (!window.cordova) {
+        console.log('웹 환경에서 실행 중');
+        setTimeout(() => {
+            initializeApp();
+            document.querySelector('.listening').style.display = 'none';
+            document.querySelector('.received').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('deviceStatus').style.display = 'none';
+            }, 3000);
+        }, 1000);
+    }
+});
+
+// 백 버튼 처리 (Android)
+document.addEventListener("backbutton", function(e) {
+    // 러닝 중이면 확인 다이얼로그
+    if (isRunning) {
+        if (confirm('러닝을 종료하시겠습니까?')) {
+            stopRunning();
+        }
+        e.preventDefault();
+        return false;
+    }
+    
+    // 러닝 화면에서는 메인으로 돌아가기
+    if (document.getElementById('runningScreen').style.display !== 'none') {
+        showMainScreen();
+        e.preventDefault();
+        return false;
+    }
+    
+    // 메인 화면에서는 앱 종료 확인
+    if (confirm('앱을 종료하시겠습니까?')) {
+        navigator.app.exitApp();
+    }
+    e.preventDefault();
+    return false;
+}, false);
+
+// 메뉴 버튼 처리 (Android)
+document.addEventListener("menubutton", function(e) {
+    // 설정 메뉴 표시 또는 다른 액션
+    alert('메뉴 기능은 준비 중입니다.');
+    e.preventDefault();
+}, false);
+    // Cordova 앱 초기화
+document.addEventListener('deviceready', onDeviceReady, false);
+
+function onDeviceReady() {
+    // 디바이스가 준비되었을 때 실행
+    console.log('Device is ready');
+    
+    // UI 상태 변경
+    document.querySelector('.listening').style.display = 'none';
+    document.querySelector('.received').style.display = 'block';
+    
+    // 여기에 러닝 앱 기능들을 추가할 수 있습니다
+    initializeRunningApp();
+}
+
+// 러닝 앱 초기화 함수
+function initializeRunningApp() {
+    console.log('Running app initialized');
+    
+    // GPS 위치 추적 시작
+    startLocationTracking();
+    
+    // UI 이벤트 리스너 등록
+    setupEventListeners();
+}
+
+// GPS 위치 추적
+function startLocationTracking() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                console.log('현재 위치:', position.coords.latitude, position.coords.longitude);
+                // 위치 정보 처리
+            },
+            function(error) {
+                console.log('위치 정보 오류:', error.message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+}
+
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    // 앱 일시정지/재개 이벤트
+    document.addEventListener('pause', onPause, false);
+    document.addEventListener('resume', onResume, false);
+}
+
+function onPause() {
+    console.log('앱이 일시정지됨');
+}
+
+function onResume() {
+    console.log('앱이 재개됨');
+}
