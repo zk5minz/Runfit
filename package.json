@@ -2,29 +2,111 @@
   "name": "runfit",
   "displayName": "RunFit",
   "version": "1.0.0",
-  "description": "RunFit - Your personal running companion",
+  "description": "GPS 기반 러닝 트래커 - 정확한 위치 추적으로 러닝 데이터를 기록하고 분석하는 개인 맞춤 러닝 앱",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "homepage": "https://github.com/zk5minz/Runfit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zk5minz/Runfit.git"
   },
-  "author": "RunFit Team",
+  "bugs": {
+    "url": "https://github.com/zk5minz/Runfit/issues"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cordova serve",
+    "build": "cordova build",
+    "build:android": "cordova build android",
+    "build:ios": "cordova build ios",
+    "run:android": "cordova run android",
+    "run:ios": "cordova run ios",
+    "emulate:android": "cordova emulate android",
+    "emulate:ios": "cordova emulate ios",
+    "prepare": "cordova prepare",
+    "clean": "cordova clean",
+    "platform:add:android": "cordova platform add android",
+    "platform:add:ios": "cordova platform add ios",
+    "plugin:save": "cordova plugin save"
+  },
+  "author": {
+    "name": "RunFit Development Team",
+    "email": "dev@runfit.com",
+    "url": "https://runfit.com"
+  },
+  "contributors": [
+    {
+      "name": "zk5minz",
+      "url": "https://github.com/zk5minz"
+    }
+  ],
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0",
+    "cordova": ">=12.0.0"
+  },
+  "dependencies": {
+    "cordova": "^12.0.0",
+    "cordova-android": "^12.0.0",
+    "cordova-ios": "^7.0.0"
+  },
   "devDependencies": {
     "cordova": "^12.0.0",
-    "cordova-android": "^12.0.0"
+    "cordova-android": "^12.0.0",
+    "cordova-ios": "^7.0.0"
   },
   "cordova": {
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ],
     "plugins": {
       "cordova-plugin-whitelist": {},
       "cordova-plugin-device": {},
-      "cordova-plugin-geolocation": {},
-      "cordova-plugin-dialogs": {}
+      "cordova-plugin-geolocation": {
+        "GPS_REQUIRED": "true"
+      },
+      "cordova-plugin-dialogs": {},
+      "cordova-plugin-background-mode": {},
+      "cordova-plugin-file": {},
+      "cordova-plugin-media": {},
+      "cordova-plugin-vibration": {},
+      "cordova-plugin-network-information": {},
+      "cordova-plugin-statusbar": {},
+      "cordova-plugin-splashscreen": {}
     }
   },
   "keywords": [
-    "ecosystem:cordova"
-  ]
+    "ecosystem:cordova",
+    "running",
+    "fitness",
+    "gps",
+    "tracker",
+    "health",
+    "mobile",
+    "app",
+    "runfit",
+    "exercise",
+    "workout",
+    "distance",
+    "pace",
+    "calories",
+    "heartrate",
+    "korean",
+    "러닝",
+    "피트니스",
+    "운동"
+  ],
+  "categories": [
+    "Health & Fitness",
+    "Sports"
+  ],
+  "preferGlobal": false,
+  "private": false,
+  "config": {
+    "app_name": "RunFit",
+    "app_id": "com.runfit.app",
+    "target_sdk_version": "33",
+    "min_sdk_version": "22"
+  }
 }
