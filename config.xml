@@ -2,7 +2,7 @@
 <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
     <name>RunFit</name>
     <description>
-        RunFit - Your personal running companion app.
+        GPS 기반 러닝 트래커 - 정확한 위치 추적으로 러닝 데이터를 기록하고 분석하세요.
     </description>
     <author email="dev@runfit.com" href="https://runfit.com">
         RunFit Development Team
@@ -22,18 +22,99 @@
         <allow-intent href="geo:*" />
         <preference name="android-minSdkVersion" value="22" />
         <preference name="android-targetSdkVersion" value="33" />
+        
+        <!-- Android 권한 설정 -->
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        </config-file>
+    </platform>
+    
+    <platform name="ios">
+        <allow-intent href="itms:*" />
+        <allow-intent href="itms-apps:*" />
+        
+        <!-- iOS 위치 권한 설정 -->
+        <config-file target="*-Info.plist" parent="NSLocationWhenInUseUsageDescription">
+            <string>RunFit이 러닝 중 위치를 추적하여 경로와 거리를 기록하기 위해 위치 권한이 필요합니다.</string>
+        </config-file>
+        <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
+            <string>RunFit이 백그라운드에서도 러닝을 추적할 수 있도록 위치 권한이 필요합니다.</string>
+        </config-file>
     </platform>
     
     <!-- Global preferences -->
     <preference name="Fullscreen" value="false" />
     <preference name="Orientation" value="portrait" />
     <preference name="DisallowOverscroll" value="true" />
-    <preference name="BackgroundMode" value="false" />
+    <preference name="BackgroundMode" value="location" />
+    <preference name="KeepRunning" value="true" />
     
-    <!-- Plugins (기본적인 것들) -->
+    <!-- 러닝 앱에 필요한 플러그인들 -->
     <plugin name="cordova-plugin-whitelist" spec="1" />
     <plugin name="cordova-plugin-device" spec="2" />
     <plugin name="cordova-plugin-geolocation" spec="4" />
     <plugin name="cordova-plugin-dialogs" spec="2" />
+    <plugin name="cordova-plugin-background-mode" spec="0.7.3" />
+    <plugin name="cordova-plugin-file" spec="6" />
+    <plugin name="cordova-plugin-media" spec="5" />
+    <plugin name="cordova-plugin-vibration" spec="3" />
+    <plugin name="cordova-plugin-network-information" spec="2" />
+    <plugin name="cordova-plugin-statusbar" spec="2" />
+    <plugin name="cordova-plugin-splashscreen" spec="5" />
+    
+    <!-- 아이콘 및 스플래시 스크린 설정 -->
+    <icon src="www/img/icon.png" />
+    
+    <!-- Android 아이콘 -->
+    <platform name="android">
+        <icon density="ldpi" src="www/res/icon/android/drawable-ldpi-icon.png" />
+        <icon density="mdpi" src="www/res/icon/android/drawable-mdpi-icon.png" />
+        <icon density="hdpi" src="www/res/icon/android/drawable-hdpi-icon.png" />
+        <icon density="xhdpi" src="www/res/icon/android/drawable-xhdpi-icon.png" />
+        <icon density="xxhdpi" src="www/res/icon/android/drawable-xxhdpi-icon.png" />
+        <icon density="xxxhdpi" src="www/res/icon/android/drawable-xxxhdpi-icon.png" />
+        
+        <!-- 스플래시 스크린 -->
+        <splash density="land-ldpi" src="www/res/splash/android/drawable-land-ldpi-screen.png" />
+        <splash density="land-mdpi" src="www/res/splash/android/drawable-land-mdpi-screen.png" />
+        <splash density="land-hdpi" src="www/res/splash/android/drawable-land-hdpi-screen.png" />
+        <splash density="land-xhdpi" src="www/res/splash/android/drawable-land-xhdpi-screen.png" />
+        <splash density="land-xxhdpi" src="www/res/splash/android/drawable-land-xxhdpi-screen.png" />
+        <splash density="land-xxxhdpi" src="www/res/splash/android/drawable-land-xxxhdpi-screen.png" />
+        <splash density="port-ldpi" src="www/res/splash/android/drawable-port-ldpi-screen.png" />
+        <splash density="port-mdpi" src="www/res/splash/android/drawable-port-mdpi-screen.png" />
+        <splash density="port-hdpi" src="www/res/splash/android/drawable-port-hdpi-screen.png" />
+        <splash density="port-xhdpi" src="www/res/splash/android/drawable-port-xhdpi-screen.png" />
+        <splash density="port-xxhdpi" src="www/res/splash/android/drawable-port-xxhdpi-screen.png" />
+        <splash density="port-xxxhdpi" src="www/res/splash/android/drawable-port-xxxhdpi-screen.png" />
+    </platform>
+    
+    <!-- iOS 아이콘 -->
+    <platform name="ios">
+        <icon height="57" src="www/res/icon/ios/icon.png" width="57" />
+        <icon height="114" src="www/res/icon/ios/icon@2x.png" width="114" />
+        <icon height="40" src="www/res/icon/ios/icon-40.png" width="40" />
+        <icon height="80" src="www/res/icon/ios/icon-40@2x.png" width="80" />
+        <icon height="120" src="www/res/icon/ios/icon-40@3x.png" width="120" />
+        <icon height="50" src="www/res/icon/ios/icon-50.png" width="50" />
+        <icon height="100" src="www/res/icon/ios/icon-50@2x.png" width="100" />
+        <icon height="60" src="www/res/icon/ios/icon-60.png" width="60" />
+        <icon height="120" src="www/res/icon/ios/icon-60@2x.png" width="120" />
+        <icon height="180" src="www/res/icon/ios/icon-60@3x.png" width="180" />
+        <icon height="72" src="www/res/icon/ios/icon-72.png" width="72" />
+        <icon height="144" src="www/res/icon/ios/icon-72@2x.png" width="144" />
+        <icon height="76" src="www/res/icon/ios/icon-76.png" width="76" />
+        <icon height="152" src="www/res/icon/ios/icon-76@2x.png" width="152" />
+        <icon height="167" src="www/res/icon/ios/icon-83.5@2x.png" width="167" />
+        <icon height="29" src="www/res/icon/ios/icon-small.png" width="29" />
+        <icon height="58" src="www/res/icon/ios/icon-small@2x.png" width="58" />
+        <icon height="87" src="www/res/icon/ios/icon-small@3x.png" width="87" />
+        <icon height="1024" src="www/res/icon/ios/icon-1024.png" width="1024" />
+    </platform>
     
 </widget>
