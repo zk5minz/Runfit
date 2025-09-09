@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.runfit.tracker" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+<widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
     <name>RunFit Tracker</name>
     <description>
         A running tracker application built with Cordova.
