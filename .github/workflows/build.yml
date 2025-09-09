@@ -18,7 +18,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
+        # cache 옵션 제거로 오류 해결
         
     - name: ☕ Setup Java
       uses: actions/setup-java@v4
@@ -35,7 +35,11 @@ jobs:
     - name: 🔧 Install Dependencies
       run: |
         npm install -g cordova@latest
-        npm install
+        if [ -f "package.json" ]; then
+          npm install
+        else
+          echo "No package.json found, skipping npm install"
+        fi
         
     - name: 🏗️ Add Android Platform
       run: cordova platform add android
@@ -97,7 +101,7 @@ jobs:
       run: |
         echo "✅ 빌드 완료!"
         echo "📱 앱 이름: RunFit"
-        echo "📦 버전: $(node -p "require('./package.json').version")"
+        echo "📦 버전: $(node -p "require('./package.json').version" 2>/dev/null || echo "버전 정보 없음")"
         echo "🗓️ 빌드 시간: $(date)"
         echo ""
         echo "📁 생성된 APK 파일:"
