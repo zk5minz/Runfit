@@ -1,0 +1,86 @@
+name: Build RunFit Android App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: ☕ Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: 🤖 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: 📱 Accept Android SDK Licenses
+      run: yes | sdkmanager --licenses
+      
+    - name: 🔧 Install Dependencies
+      run: |
+        npm install -g cordova@latest
+        npm install
+        
+    - name: 🏗️ Add Android Platform
+      run: cordova platform add android
+      
+    - name: 🔌 Install Plugins
+      run: |
+        cordova plugin add cordova-plugin-whitelist
+        cordova plugin add cordova-plugin-device
+        cordova plugin add cordova-plugin-geolocation
+        cordova plugin add cordova-plugin-dialogs
+        cordova plugin add cordova-plugin-background-mode
+        cordova plugin add cordova-plugin-file
+        cordova plugin add cordova-plugin-vibration
+        cordova plugin add cordova-plugin-network-information
+        cordova plugin add cordova-plugin-statusbar
+        cordova plugin add cordova-plugin-splashscreen
+        
+    - name: 🔨 Build Debug APK
+      run: cordova build android --debug
+      
+    - name: 🔨 Build Release APK (unsigned)
+      run: cordova build android --release
+      
+    - name: 📤 Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: RunFit-debug-apk
+        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+        
+    - name: 📤 Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: RunFit-release-apk
+        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        retention-days: 30
+        
+    - name: 📋 Show Build Information
+      run: |
+        echo "✅ 빌드 완료!"
+        echo "📱 앱 이름: RunFit"
+        echo "📦 버전: $(node -p "require('./package.json').version")"
+        echo "🗓️ 빌드 시간: $(date)"
+        echo ""
+        echo "📁 생성된 파일:"
+        ls -la platforms/android/app/build/outputs/apk/debug/ || echo "디버그 APK 없음"
+        ls -la platforms/android/app/build/outputs/apk/release/ || echo "릴리즈 APK 없음"
