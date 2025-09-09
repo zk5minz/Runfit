@@ -1,13 +1,13 @@
 {
-  "name": "runfit-tracker",
-  "displayName": "RunFit Tracker",
+  "name": "runfit",
+  "displayName": "Runfit", 
   "version": "1.0.0",
-  "description": "A running tracker mobile application",
+  "description": "Runfit - Your personal running companion",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "RunFit Team",
+  "author": "Runfit Team",
   "license": "Apache-2.0",
   "devDependencies": {
     "cordova": "^12.0.0",
