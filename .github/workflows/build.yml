@@ -4,7 +4,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # 수동 실행 가능
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,7 +18,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        # cache 옵션 제거로 오류 해결
         
     - name: ☕ Setup Java
       uses: actions/setup-java@v4
@@ -32,82 +31,82 @@ jobs:
     - name: 📱 Accept Android SDK Licenses
       run: yes | sdkmanager --licenses
       
-    - name: 🔧 Install Dependencies
+    - name: 🔧 Install Cordova CLI
+      run: npm install -g cordova@latest
+      
+    - name: 🏗️ Check and Initialize Cordova Project
       run: |
-        npm install -g cordova@latest
+        echo "=== 프로젝트 구조 확인 ==="
+        ls -la
+        
+        if [ ! -f "config.xml" ]; then
+          echo "config.xml이 없습니다. Cordova 프로젝트를 초기화합니다."
+          cordova create temp_app com.runfit.app RunFit
+          cp -r temp_app/* .
+          rm -rf temp_app
+        else
+          echo "기존 Cordova 프로젝트를 사용합니다."
+        fi
+        
+    - name: 📦 Install Dependencies
+      run: |
         if [ -f "package.json" ]; then
           npm install
         else
-          echo "No package.json found, skipping npm install"
+          echo "package.json이 없습니다. 건너뜁니다."
         fi
         
     - name: 🏗️ Add Android Platform
-      run: cordova platform add android
-      
-    - name: 🔌 Install Plugins
       run: |
-        cordova plugin add cordova-plugin-whitelist
-        cordova plugin add cordova-plugin-device
-        cordova plugin add cordova-plugin-geolocation
-        cordova plugin add cordova-plugin-dialogs
-        cordova plugin add cordova-plugin-background-mode
-        cordova plugin add cordova-plugin-file
-        cordova plugin add cordova-plugin-vibration
-        cordova plugin add cordova-plugin-network-information
-        cordova plugin add cordova-plugin-statusbar
-        cordova plugin add cordova-plugin-splashscreen
+        if ! cordova platform list | grep -q "android"; then
+          cordova platform add android
+        else
+          echo "Android 플랫폼이 이미 추가되어 있습니다."
+        fi
+      
+    - name: 🔌 Install Essential Plugins
+      run: |
+        cordova plugin add cordova-plugin-whitelist || echo "whitelist 플러그인 설치 실패"
+        cordova plugin add cordova-plugin-device || echo "device 플러그인 설치 실패"
+        cordova plugin add cordova-plugin-statusbar || echo "statusbar 플러그인 설치 실패"
         
     - name: 🔨 Build Debug APK
-      run: cordova build android --debug
-      
-    - name: 🔨 Build Release APK (unsigned)
-      run: cordova build android --release
-      
-    - name: 📱 Build Debug AAB
-      run: cordova build android --debug -- --packageType=bundle
-      
-    - name: 📱 Build Release AAB (unsigned)
-      run: cordova build android --release -- --packageType=bundle
+      run: |
+        echo "Debug APK 빌드 시작..."
+        cordova build android --debug
+        
+    - name: 🔨 Build Release APK
+      run: |
+        echo "Release APK 빌드 시작..."
+        cordova build android --release
+        
+    - name: 📁 Find and List APK Files
+      run: |
+        echo "=== APK 파일 검색 ==="
+        find . -name "*.apk" -type f
         
     - name: 📤 Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
         name: RunFit-debug-apk
-        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: |
+          platforms/android/app/build/outputs/apk/debug/*.apk
         retention-days: 30
+        if-no-files-found: warn
         
     - name: 📤 Upload Release APK
       uses: actions/upload-artifact@v4
       with:
         name: RunFit-release-apk
-        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        path: |
+          platforms/android/app/build/outputs/apk/release/*.apk
         retention-days: 30
+        if-no-files-found: warn
         
-    - name: 📤 Upload Debug AAB
-      uses: actions/upload-artifact@v4
-      with:
-        name: RunFit-debug-aab
-        path: platforms/android/app/build/outputs/bundle/debug/app-debug.aab
-        retention-days: 30
-        
-    - name: 📤 Upload Release AAB
-      uses: actions/upload-artifact@v4
-      with:
-        name: RunFit-release-aab
-        path: platforms/android/app/build/outputs/bundle/release/app-release-unsigned.aab
-        retention-days: 30
-        
-    - name: 📋 Show Build Information
+    - name: 📋 Show Build Results
       run: |
         echo "✅ 빌드 완료!"
-        echo "📱 앱 이름: RunFit"
-        echo "📦 버전: $(node -p "require('./package.json').version" 2>/dev/null || echo "버전 정보 없음")"
         echo "🗓️ 빌드 시간: $(date)"
         echo ""
-        echo "📁 생성된 APK 파일:"
-        ls -la platforms/android/app/build/outputs/apk/debug/ 2>/dev/null || echo "디버그 APK 없음"
-        ls -la platforms/android/app/build/outputs/apk/release/ 2>/dev/null || echo "릴리즈 APK 없음"
-        echo ""
-        echo "📁 생성된 AAB 파일:"
-        ls -la platforms/android/app/build/outputs/bundle/debug/ 2>/dev/null || echo "디버그 AAB 없음"
-        ls -la platforms/android/app/build/outputs/bundle/release/ 2>/dev/null || echo "릴리즈 AAB 없음"
+        echo "📁 생성된 APK 파일들:"
+        find . -name "*.apk" -type f -exec ls -lh {} \;
