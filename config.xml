@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
-    <name>RunFit Tracker</name>
+    <name>RunFit</name>
     <description>
-        A running tracker application built with Cordova.
+        RunFit - Your personal running companion app.
     </description>
     <author email="dev@runfit.com" href="https://runfit.com">
         RunFit Development Team
