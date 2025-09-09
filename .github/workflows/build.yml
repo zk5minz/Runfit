@@ -1,5 +1,4 @@
 name: Build RunFit Android App
-
 on:
   push:
     branches: [ main, master ]
@@ -60,6 +59,12 @@ jobs:
     - name: 🔨 Build Release APK (unsigned)
       run: cordova build android --release
       
+    - name: 📱 Build Debug AAB
+      run: cordova build android --debug -- --packageType=bundle
+      
+    - name: 📱 Build Release AAB (unsigned)
+      run: cordova build android --release -- --packageType=bundle
+        
     - name: 📤 Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
@@ -74,6 +79,20 @@ jobs:
         path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 30
         
+    - name: 📤 Upload Debug AAB
+      uses: actions/upload-artifact@v4
+      with:
+        name: RunFit-debug-aab
+        path: platforms/android/app/build/outputs/bundle/debug/app-debug.aab
+        retention-days: 30
+        
+    - name: 📤 Upload Release AAB
+      uses: actions/upload-artifact@v4
+      with:
+        name: RunFit-release-aab
+        path: platforms/android/app/build/outputs/bundle/release/app-release-unsigned.aab
+        retention-days: 30
+        
     - name: 📋 Show Build Information
       run: |
         echo "✅ 빌드 완료!"
@@ -81,6 +100,10 @@ jobs:
         echo "📦 버전: $(node -p "require('./package.json').version")"
         echo "🗓️ 빌드 시간: $(date)"
         echo ""
-        echo "📁 생성된 파일:"
-        ls -la platforms/android/app/build/outputs/apk/debug/ || echo "디버그 APK 없음"
-        ls -la platforms/android/app/build/outputs/apk/release/ || echo "릴리즈 APK 없음"
+        echo "📁 생성된 APK 파일:"
+        ls -la platforms/android/app/build/outputs/apk/debug/ 2>/dev/null || echo "디버그 APK 없음"
+        ls -la platforms/android/app/build/outputs/apk/release/ 2>/dev/null || echo "릴리즈 APK 없음"
+        echo ""
+        echo "📁 생성된 AAB 파일:"
+        ls -la platforms/android/app/build/outputs/bundle/debug/ 2>/dev/null || echo "디버그 AAB 없음"
+        ls -la platforms/android/app/build/outputs/bundle/release/ 2>/dev/null || echo "릴리즈 AAB 없음"
