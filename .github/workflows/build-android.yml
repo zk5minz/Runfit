@@ -11,10 +11,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [18.x]
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -22,8 +18,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        node-version: '18.x'
 
     - name: Setup Java (for Android build)
       uses: actions/setup-java@v3
@@ -39,11 +34,15 @@ jobs:
         mkdir -p www/img
         echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
 
-    - name: Install dependencies
-      run: npm install
-
     - name: Install Cordova globally
       run: npm install -g cordova@12.0.0
+
+    - name: Initialize npm
+      run: |
+        if [ ! -f package.json ]; then
+          npm init -y
+        fi
+        npm install
 
     - name: Add Android platform
       run: cordova platform add android@12.0.0
