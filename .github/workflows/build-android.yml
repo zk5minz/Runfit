@@ -1,112 +1,131 @@
-name: Build RunFit Android App
+name: Build RunFit App
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
-    - name: 📥 Checkout Repository
+    - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: 📦 Setup Node.js
+
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        
-    - name: ☕ Setup Java
-      uses: actions/setup-java@v4
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Setup Java (for Android build)
+      uses: actions/setup-java@v3
       with:
+        java-version: '11'
         distribution: 'temurin'
-        java-version: '17'
-        
-    - name: 🤖 Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: 📱 Accept Android SDK Licenses
-      run: yes | sdkmanager --licenses
-      
-    - name: 🔧 Install Cordova CLI
-      run: npm install -g cordova@latest
-      
-    - name: 🏗️ Check and Initialize Cordova Project
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Create basic icon file
       run: |
-        echo "=== 프로젝트 구조 확인 ==="
-        ls -la
-        
-        if [ ! -f "config.xml" ]; then
-          echo "config.xml이 없습니다. Cordova 프로젝트를 초기화합니다."
-          cordova create temp_app com.runfit.app RunFit
-          cp -r temp_app/* .
-          rm -rf temp_app
-        else
-          echo "기존 Cordova 프로젝트를 사용합니다."
-        fi
-        
-    - name: 📦 Install Dependencies
+        mkdir -p www/img
+        # Create a simple placeholder icon (1x1 transparent PNG)
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Cordova globally
+      run: npm install -g cordova@12.0.0
+
+    - name: Add Android platform
+      run: cordova platform add android@12.0.0
+
+    - name: Install plugins
       run: |
-        if [ -f "package.json" ]; then
-          npm install
-        else
-          echo "package.json이 없습니다. 건너뜁니다."
-        fi
-        
-    - name: 🏗️ Add Android Platform
-      run: |
-        if ! cordova platform list | grep -q "android"; then
-          cordova platform add android
-        else
-          echo "Android 플랫폼이 이미 추가되어 있습니다."
-        fi
-      
-    - name: 🔌 Install Essential Plugins
-      run: |
-        cordova plugin add cordova-plugin-whitelist || echo "whitelist 플러그인 설치 실패"
-        cordova plugin add cordova-plugin-device || echo "device 플러그인 설치 실패"
-        cordova plugin add cordova-plugin-statusbar || echo "statusbar 플러그인 설치 실패"
-        
-    - name: 🔨 Build Debug APK
-      run: |
-        echo "Debug APK 빌드 시작..."
-        cordova build android --debug
-        
-    - name: 🔨 Build Release APK
-      run: |
-        echo "Release APK 빌드 시작..."
-        cordova build android --release
-        
-    - name: 📁 Find and List APK Files
-      run: |
-        echo "=== APK 파일 검색 ==="
-        find . -name "*.apk" -type f
-        
-    - name: 📤 Upload Debug APK
-      uses: actions/upload-artifact@v4
+        cordova plugin add cordova-plugin-whitelist@1
+        cordova plugin add cordova-plugin-device@2
+        cordova plugin add cordova-plugin-geolocation@4
+        cordova plugin add cordova-plugin-dialogs@2
+        cordova plugin add cordova-plugin-background-mode@0.7.3
+        cordova plugin add cordova-plugin-file@6
+        cordova plugin add cordova-plugin-media@5
+        cordova plugin add cordova-plugin-vibration@3
+        cordova plugin add cordova-plugin-network-information@2
+        cordova plugin add cordova-plugin-statusbar@2
+
+    - name: Build Android APK
+      run: cordova build android --release
+
+    - name: Upload Android APK
+      uses: actions/upload-artifact@v3
       with:
-        name: RunFit-debug-apk
-        path: |
-          platforms/android/app/build/outputs/apk/debug/*.apk
-        retention-days: 30
-        if-no-files-found: warn
-        
-    - name: 📤 Upload Release APK
-      uses: actions/upload-artifact@v4
+        name: android-apk
+        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+  build-ios:
+    runs-on: macos-latest
+    if: false # iOS 빌드를 비활성화 (필요시 true로 변경)
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        name: RunFit-release-apk
-        path: |
-          platforms/android/app/build/outputs/apk/release/*.apk
-        retention-days: 30
-        if-no-files-found: warn
-        
-    - name: 📋 Show Build Results
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Create basic icon file
       run: |
-        echo "✅ 빌드 완료!"
-        echo "🗓️ 빌드 시간: $(date)"
-        echo ""
-        echo "📁 생성된 APK 파일들:"
-        find . -name "*.apk" -type f -exec ls -lh {} \;
+        mkdir -p www/img
+        # Create a simple placeholder icon (1x1 transparent PNG)
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Cordova globally
+      run: npm install -g cordova@12.0.0
+
+    - name: Add iOS platform
+      run: cordova platform add ios@6.3.0
+
+    - name: Install plugins
+      run: |
+        cordova plugin add cordova-plugin-whitelist@1
+        cordova plugin add cordova-plugin-device@2
+        cordova plugin add cordova-plugin-geolocation@4
+        cordova plugin add cordova-plugin-dialogs@2
+        cordova plugin add cordova-plugin-background-mode@0.7.3
+        cordova plugin add cordova-plugin-file@6
+        cordova plugin add cordova-plugin-media@5
+        cordova plugin add cordova-plugin-vibration@3
+        cordova plugin add cordova-plugin-network-information@2
+        cordova plugin add cordova-plugin-statusbar@2
+
+    - name: Build iOS
+      run: cordova build ios
+
+    - name: Upload iOS build
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-build
+        path: platforms/ios/build/
