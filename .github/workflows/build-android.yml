@@ -1,4 +1,4 @@
-name: Build RunFit App (Simple)
+name: Build RunFit App (From ZIP)
 on:
   push:
     branches: [ main, develop ]
@@ -34,27 +34,43 @@ jobs:
     - name: Install Cordova
       run: npm install -g cordova@12.0.0
       
-    - name: Initialize project structure
+    - name: Extract RunfitApp.zip to www folder
       run: |
-        # Create package.json
-        cat > package.json << 'EOF'
-        {
-          "name": "runfit-app",
-          "version": "1.0.0",
-          "description": "RunFit Mobile Application",
-          "main": "index.js",
-          "scripts": {
-            "test": "echo \"Error: no test specified\" && exit 1"
-          },
-          "keywords": ["cordova", "mobile", "app"],
-          "author": "RunFit Team",
-          "license": "MIT"
-        }
-        EOF
-        
-        # Create www directory and basic HTML
-        mkdir -p www/img
-        cat > www/index.html << 'EOF'
+        if [ -f "RunfitApp.zip" ]; then
+          echo "Found RunfitApp.zip, extracting..."
+          # www 폴더가 있다면 삭제하고 새로 생성
+          rm -rf www
+          mkdir -p www
+          
+          # ZIP 파일을 임시 폴더에 압축 해제
+          unzip -q RunfitApp.zip -d temp_extract
+          
+          # 압축 해제된 내용 확인
+          echo "Extracted contents:"
+          find temp_extract -type f | head -20
+          
+          # 웹앱 파일들을 www 폴더로 복사
+          # 만약 압축파일 안에 폴더가 있다면 그 내용을 복사
+          if [ -d "temp_extract/RunfitApp" ]; then
+            cp -r temp_extract/RunfitApp/* www/
+          elif [ -d "temp_extract/www" ]; then
+            cp -r temp_extract/www/* www/
+          else
+            # 압축파일의 루트에 파일들이 있는 경우
+            cp -r temp_extract/* www/
+          fi
+          
+          # 임시 폴더 정리
+          rm -rf temp_extract
+          
+          echo "Contents of www folder:"
+          ls -la www/
+          
+          # index.html이 있는지 확인
+          if [ ! -f "www/index.html" ]; then
+            echo "Warning: index.html not found in www folder!"
+            echo "Creating basic index.html..."
+            cat > www/index.html << 'EOF'
         <!DOCTYPE html>
         <html>
         <head>
@@ -64,27 +80,69 @@ jobs:
         </head>
         <body>
             <h1>🏃‍♂️ RunFit</h1>
-            <p>Welcome to RunFit App!</p>
+            <p>웹앱 파일이 올바르게 추출되지 않았습니다.</p>
             <script src="cordova.js"></script>
         </body>
         </html>
         EOF
+          fi
+        else
+          echo "RunfitApp.zip not found, creating basic www structure..."
+          mkdir -p www
+          cat > www/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>RunFit</title>
+        </head>
+        <body>
+            <h1>🏃‍♂️ RunFit</h1>
+            <p>RunfitApp.zip 파일을 레포지토리 루트에 업로드해주세요!</p>
+            <script src="cordova.js"></script>
+        </body>
+        </html>
+        EOF
+        fi
         
-        # Create basic icon
-        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
+    - name: Create package.json
+      run: |
+        cat > package.json << 'EOF'
+        {
+          "name": "runfit-app",
+          "version": "1.0.0",
+          "description": "RunFit Mobile Application",
+          "main": "index.js",
+          "keywords": ["cordova", "mobile", "app"],
+          "author": "RunFit Team",
+          "license": "MIT"
+        }
+        EOF
         
-        # Create config.xml
+    - name: Create config.xml
+      run: |
         cat > config.xml << 'EOF'
         <?xml version='1.0' encoding='utf-8'?>
-        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
-            <name>RunFit</name>
-            <description>RunFit Application</description>
-            <author>RunFit Team</author>
+        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <n>RunFit</n>
+            <description>RunFit Mobile Application</description>
+            <author email="dev@runfit.com" href="https://runfit.com">RunFit Team</author>
             <content src="index.html" />
             <access origin="*" />
+            <allow-navigation href="*" />
+            <allow-intent href="http://*/*" />
+            <allow-intent href="https://*/*" />
+            <allow-intent href="tel:*" />
+            <allow-intent href="sms:*" />
+            <allow-intent href="mailto:*" />
+            <allow-intent href="geo:*" />
             <platform name="android">
+                <allow-intent href="market:*" />
                 <preference name="android-minSdkVersion" value="22" />
                 <preference name="android-targetSdkVersion" value="33" />
+                <preference name="android-compileSdkVersion" value="33" />
+                <preference name="AndroidXEnabled" value="true" />
             </platform>
         </widget>
         EOF
@@ -92,15 +150,32 @@ jobs:
     - name: Add Android platform
       run: cordova platform add android
       
-    - name: Build Android
-      run: cordova build android
-      
-    - name: Find APK files
-      run: find . -name "*.apk" -type f
-      
-    - name: Upload APK
+    - name: Add essential plugins
+      run: |
+        cordova plugin add cordova-plugin-whitelist
+        cordova plugin add cordova-plugin-device
+        cordova plugin add cordova-plugin-geolocation
+        cordova plugin add cordova-plugin-file
+        
+    - name: Verify www folder structure
+      run: |
+        echo "Final www folder structure:"
+        find www -type f | head -20
+        
+    - name: Build Android APK
+      run: |
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        export JAVA_HOME=$JAVA_HOME_17_X64
+        cordova build android --release --verbose
+        
+    - name: List APK files
+      run: |
+        echo "Looking for APK files..."
+        find . -name "*.apk" -type f -exec ls -la {} \;
+        
+    - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
-        name: android-apk
+        name: runfit-android-apk
         path: "platforms/android/app/build/outputs/apk/**/*.apk"
         if-no-files-found: warn
