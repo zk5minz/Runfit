@@ -18,6 +18,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
+        cache: 'npm'
         
     - name: Setup Java (for Android build)
       uses: actions/setup-java@v4
@@ -29,12 +30,15 @@ jobs:
       uses: android-actions/setup-android@v3
       with:
         api-level: 33
-        target: android-33
-        arch: x86_64
         
     - name: Accept Android SDK licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       
+    - name: Install Android build tools
+      run: |
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
+        
     - name: Create basic icon file
       run: |
         mkdir -p www/img
@@ -43,7 +47,7 @@ jobs:
     - name: Install Cordova globally
       run: npm install -g cordova@12.0.0
       
-    - name: Initialize npm
+    - name: Initialize npm and install dependencies
       run: |
         if [ ! -f package.json ]; then
           npm init -y
@@ -60,6 +64,7 @@ jobs:
             <description>RunFit Application</description>
             <author email="dev@runfit.com" href="https://runfit.com">RunFit Team</author>
             <content src="index.html" />
+            <access origin="*" />
             <allow-intent href="http://*/*" />
             <allow-intent href="https://*/*" />
             <allow-intent href="tel:*" />
@@ -71,7 +76,11 @@ jobs:
                 <preference name="AndroidXEnabled" value="true" />
                 <preference name="GradlePluginKotlinEnabled" value="true" />
                 <preference name="GradlePluginKotlinCodeStyle" value="official" />
+                <preference name="android-minSdkVersion" value="22" />
+                <preference name="android-targetSdkVersion" value="33" />
+                <preference name="android-compileSdkVersion" value="33" />
             </platform>
+            <engine name="android" spec="^12.0.0" />
         </widget>
         EOF
         fi
@@ -85,33 +94,40 @@ jobs:
         <html>
         <head>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap:">
             <title>RunFit</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    margin: 50px;
+                }
+                .app {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                }
+            </style>
         </head>
         <body>
-            <h1>RunFit App</h1>
-            <p>Welcome to RunFit!</p>
+            <div class="app">
+                <h1>🏃‍♂️ RunFit App</h1>
+                <p>Welcome to RunFit!</p>
+                <p>Your fitness companion is ready to go.</p>
+            </div>
             <script src="cordova.js"></script>
+            <script>
+                document.addEventListener('deviceready', onDeviceReady, false);
+                function onDeviceReady() {
+                    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
+                }
+            </script>
         </body>
         </html>
         EOF
         fi
-        
-    - name: Add Android platform
-      run: cordova platform add android@12.0.0
-      
-    - name: Install plugins
-      run: |
-        cordova plugin add cordova-plugin-whitelist@1
-        cordova plugin add cordova-plugin-device@2
-        cordova plugin add cordova-plugin-geolocation@4
-        cordova plugin add cordova-plugin-dialogs@2
-        cordova plugin add cordova-plugin-background-mode@0.7.3
-        cordova plugin add cordova-plugin-file@6
-        cordova plugin add cordova-plugin-media@5
-        cordova plugin add cordova-plugin-vibration@3
-        cordova plugin add cordova-plugin-network-information@2
-        cordova plugin add cordova-plugin-statusbar@2
         
     - name: Set Gradle JVM Args
       run: |
@@ -121,13 +137,43 @@ jobs:
         echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
         echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
         
+    - name: Add Android platform
+      run: |
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        export JAVA_HOME=$JAVA_HOME_17_X64
+        cordova platform add android@12.0.0 --verbose
+      
+    - name: Install plugins
+      run: |
+        cordova plugin add cordova-plugin-whitelist@1
+        cordova plugin add cordova-plugin-device@2
+        cordova plugin add cordova-plugin-geolocation@4
+        cordova plugin add cordova-plugin-dialogs@2
+        cordova plugin add cordova-plugin-file@6
+        cordova plugin add cordova-plugin-media@5
+        cordova plugin add cordova-plugin-vibration@3
+        cordova plugin add cordova-plugin-network-information@2
+        cordova plugin add cordova-plugin-statusbar@2
+        
+    - name: List platforms and plugins (debug)
+      run: |
+        cordova platform list
+        cordova plugin list
+        
     - name: Build Android APK
       run: |
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
         export JAVA_HOME=$JAVA_HOME_17_X64
         cordova build android --release --verbose
+        
+    - name: List build outputs (debug)
+      run: |
+        find . -name "*.apk" -type f
+        ls -la platforms/android/app/build/outputs/apk/release/ || echo "Release folder not found"
         
     - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: runfit/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        if-no-files-found: error
