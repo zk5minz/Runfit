@@ -1,5 +1,4 @@
 name: Build RunFit App
-
 on:
   push:
     branches: [ main, develop ]
@@ -10,43 +9,97 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
-
+        
     - name: Setup Java (for Android build)
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '17'
         distribution: 'temurin'
-
+        
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
-
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 33
+        target: android-33
+        arch: x86_64
+        
+    - name: Accept Android SDK licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+      
     - name: Create basic icon file
       run: |
         mkdir -p www/img
         echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
-
+        
     - name: Install Cordova globally
       run: npm install -g cordova@12.0.0
-
+      
     - name: Initialize npm
       run: |
         if [ ! -f package.json ]; then
           npm init -y
         fi
         npm install
-
+        
+    - name: Create config.xml if not exists
+      run: |
+        if [ ! -f config.xml ]; then
+          cat > config.xml << 'EOF'
+        <?xml version='1.0' encoding='utf-8'?>
+        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <name>RunFit</name>
+            <description>RunFit Application</description>
+            <author email="dev@runfit.com" href="https://runfit.com">RunFit Team</author>
+            <content src="index.html" />
+            <allow-intent href="http://*/*" />
+            <allow-intent href="https://*/*" />
+            <allow-intent href="tel:*" />
+            <allow-intent href="sms:*" />
+            <allow-intent href="mailto:*" />
+            <allow-intent href="geo:*" />
+            <platform name="android">
+                <allow-intent href="market:*" />
+                <preference name="AndroidXEnabled" value="true" />
+                <preference name="GradlePluginKotlinEnabled" value="true" />
+                <preference name="GradlePluginKotlinCodeStyle" value="official" />
+            </platform>
+        </widget>
+        EOF
+        fi
+        
+    - name: Create basic index.html if not exists
+      run: |
+        if [ ! -f www/index.html ]; then
+          mkdir -p www
+          cat > www/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>RunFit</title>
+        </head>
+        <body>
+            <h1>RunFit App</h1>
+            <p>Welcome to RunFit!</p>
+            <script src="cordova.js"></script>
+        </body>
+        </html>
+        EOF
+        fi
+        
     - name: Add Android platform
       run: cordova platform add android@12.0.0
-
+      
     - name: Install plugins
       run: |
         cordova plugin add cordova-plugin-whitelist@1
@@ -59,10 +112,20 @@ jobs:
         cordova plugin add cordova-plugin-vibration@3
         cordova plugin add cordova-plugin-network-information@2
         cordova plugin add cordova-plugin-statusbar@2
-
+        
+    - name: Set Gradle JVM Args
+      run: |
+        mkdir -p ~/.gradle
+        echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> ~/.gradle/gradle.properties
+        echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
+        echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
+        echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
+        
     - name: Build Android APK
-      run: cordova build android --release
-
+      run: |
+        export JAVA_HOME=$JAVA_HOME_17_X64
+        cordova build android --release --verbose
+        
     - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
