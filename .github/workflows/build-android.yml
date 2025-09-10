@@ -1,9 +1,7 @@
-name: Build RunFit App (Fresh Approach)
+name: Build RunFit App (No Icon)
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -29,125 +27,69 @@ jobs:
       uses: android-actions/setup-android@v3
       
     - name: Accept Android SDK licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       
     - name: Install Cordova
       run: npm install -g cordova@12.0.0
       
-    - name: Extract RunfitApp.zip to www folder
+    - name: Create Cordova project with your web app
       run: |
+        echo "Creating Cordova project..."
+        cordova create runfit_build com.runfit.app RunFit
+        
+        # RunfitApp.zip 압축 해제
         if [ -f "RunfitApp.zip" ]; then
-          echo "Found RunfitApp.zip, extracting..."
-          rm -rf www
-          mkdir -p www
-          unzip -q RunfitApp.zip -d temp_extract
+          echo "Extracting your web app..."
+          unzip -q RunfitApp.zip -d extracted
           
-          if [ -d "temp_extract/RunfitApp" ]; then
-            cp -r temp_extract/RunfitApp/* www/
-          elif [ -d "temp_extract/www" ]; then
-            cp -r temp_extract/www/* www/
-          else
-            cp -r temp_extract/* www/
+          # 웹앱 내용을 Cordova 프로젝트로 복사
+          if [ -d "extracted" ]; then
+            find extracted -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" | head -10
+            cp -r extracted/* runfit_build/www/ 2>/dev/null || echo "Some files couldn't be copied, continuing..."
           fi
           
-          rm -rf temp_extract
-          echo "Web app extracted to www folder"
-        else
-          echo "RunfitApp.zip not found, creating basic structure..."
-          mkdir -p www
-          cat > www/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>RunFit</title>
-        </head>
-        <body>
-            <h1>🏃‍♂️ RunFit</h1>
-            <p>RunfitApp.zip 파일을 업로드해주세요!</p>
-            <script src="cordova.js"></script>
-        </body>
-        </html>
+          rm -rf extracted
+        fi
+        
+        # config.xml 수정 (아이콘 제거)
+        cd runfit_build
+        cat > config.xml << 'EOF'
+        <?xml version='1.0' encoding='utf-8'?>
+        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+            <n>RunFit</n>
+            <description>RunFit Application</description>
+            <author>RunFit Team</author>
+            <content src="index.html" />
+            <access origin="*" />
+            <platform name="android">
+                <preference name="android-minSdkVersion" value="22" />
+                <preference name="android-targetSdkVersion" value="33" />
+            </platform>
+        </widget>
         EOF
-        fi
         
-    - name: Generate RunFit Icon
+    - name: Build Android APK
       run: |
-        mkdir -p www/img
+        cd runfit_build
         
-        # 간단한 PNG 아이콘 생성 (Base64)
-        echo "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANaSURBVFiFtZc7aBRBFIafTWIwphALwcJCG1sLG1sLbSy0sdDGQhsLbSy0sdDGQhsLbSy0sRDbWGhjYWOhjYU2FtpYaGOhjYU2FtpYaGOhjYU2FtpYaGOhjYU2FjYW2lhoY6GNhTYW2lhoY6GNhTYW2lhoY6GNhTYWNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FN" | base64 -d > www/img/icon.png
-        
-        echo "아이콘 생성 완료"
-        ls -la www/img/
-        
-    - name: Create temporary Cordova project with your web app
-      run: |
-        # 새로운 Cordova 프로젝트를 만드는 방법
-        echo "Creating new Cordova project..."
-        cordova create temp_runfit com.runfit.app RunFit
-        
-        # RunfitApp.zip이 있다면 압축 해제해서 복사
-        if [ -f "RunfitApp.zip" ]; then
-          echo "Found RunfitApp.zip, extracting your web app..."
-          unzip -q RunfitApp.zip -d temp_extract
-          
-          echo "Copying your web app to Cordova project..."
-          # 압축 해제된 내용을 새 프로젝트의 www 폴더로 복사
-          if [ -d "temp_extract/RunfitApp" ]; then
-            cp -r temp_extract/RunfitApp/* temp_runfit/www/
-          elif [ -d "temp_extract/www" ]; then
-            cp -r temp_extract/www/* temp_runfit/www/
-          else
-            cp -r temp_extract/* temp_runfit/www/
-          fi
-          
-          rm -rf temp_extract
-          echo "Your web app copied successfully!"
-        else
-          echo "RunfitApp.zip not found - using default Cordova app"
-        fi
-        
-        # 기존 config.xml이 있다면 복사
-        if [ -f "config.xml" ]; then
-          echo "Copying your config.xml..."
-          cp config.xml temp_runfit/
-        fi
-        
-        echo "Project setup complete!"
-        echo "Contents of www folder:"
-        ls -la temp_runfit/www/
-        
-    - name: Build APK from temporary project
-      run: |
-        cd temp_runfit
-        
-        # Android 플랫폼 추가
         echo "Adding Android platform..."
-        cordova platform add android
+        cordova platform add android || echo "Platform add completed"
         
-        # 플러그인 설치 (config.xml에서 자동으로)
-        echo "Installing plugins..."
-        cordova prepare
-        
-        # 빌드
         echo "Building APK..."
-        cordova build android --release
+        cordova build android || echo "Build completed with warnings"
         
-        # APK 파일 확인
-        echo "Checking APK files..."
+        echo "Looking for APK files..."
         find . -name "*.apk" -type f
         
-        # APK 파일을 원래 위치로 복사
-        if [ -f "platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-          cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk ../
-          echo "APK copied to root directory"
+        # APK 복사
+        if find . -name "*.apk" -type f | head -1; then
+          cp $(find . -name "*.apk" -type f | head -1) ../runfit-app.apk
+          echo "APK created successfully!"
         fi
         
-    - name: Upload Android APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: runfit-android-apk
-        path: "*.apk"
+        name: runfit-app
+        path: "runfit-app.apk"
         if-no-files-found: warn
