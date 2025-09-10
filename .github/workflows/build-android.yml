@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # 수동 실행 버튼 활성화
+  workflow_dispatch:
 
 jobs:
   build:
@@ -37,7 +37,6 @@ jobs:
     - name: Create basic icon file
       run: |
         mkdir -p www/img
-        # Create a simple placeholder icon (1x1 transparent PNG)
         echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
 
     - name: Install dependencies
@@ -66,67 +65,7 @@ jobs:
       run: cordova build android --release
 
     - name: Upload Android APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: android-apk
         path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
-
-  build-ios:
-    runs-on: macos-latest
-    if: false # iOS 빌드를 비활성화 (필요시 true로 변경)
-
-    strategy:
-      matrix:
-        node-version: [18.x]
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-
-    - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-
-    - name: Create basic icon file
-      run: |
-        mkdir -p www/img
-        # Create a simple placeholder icon (1x1 transparent PNG)
-        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Install Cordova globally
-      run: npm install -g cordova@12.0.0
-
-    - name: Add iOS platform
-      run: cordova platform add ios@6.3.0
-
-    - name: Install plugins
-      run: |
-        cordova plugin add cordova-plugin-whitelist@1
-        cordova plugin add cordova-plugin-device@2
-        cordova plugin add cordova-plugin-geolocation@4
-        cordova plugin add cordova-plugin-dialogs@2
-        cordova plugin add cordova-plugin-background-mode@0.7.3
-        cordova plugin add cordova-plugin-file@6
-        cordova plugin add cordova-plugin-media@5
-        cordova plugin add cordova-plugin-vibration@3
-        cordova plugin add cordova-plugin-network-information@2
-        cordova plugin add cordova-plugin-statusbar@2
-
-    - name: Build iOS
-      run: cordova build ios
-
-    - name: Upload iOS build
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-build
-        path: platforms/ios/build/
