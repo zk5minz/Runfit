@@ -82,26 +82,42 @@ jobs:
         echo "아이콘 생성 완료"
         ls -la www/img/
         
-    - name: Create temporary Cordova project
+    - name: Create temporary Cordova project with your web app
       run: |
-        # 아예 새로운 Cordova 프로젝트를 만드는 방법
+        # 새로운 Cordova 프로젝트를 만드는 방법
         echo "Creating new Cordova project..."
         cordova create temp_runfit com.runfit.app RunFit
         
-        # www 폴더 내용을 새 프로젝트로 복사
-        echo "Copying www contents..."
-        cp -r www/* temp_runfit/www/
-        
-        # config.xml도 복사
-        echo "Copying config.xml..."
-        cp config.xml temp_runfit/
-        
-        # package.json 정보도 복사
-        if [ -f package.json ]; then
-          cp package.json temp_runfit/
+        # RunfitApp.zip이 있다면 압축 해제해서 복사
+        if [ -f "RunfitApp.zip" ]; then
+          echo "Found RunfitApp.zip, extracting your web app..."
+          unzip -q RunfitApp.zip -d temp_extract
+          
+          echo "Copying your web app to Cordova project..."
+          # 압축 해제된 내용을 새 프로젝트의 www 폴더로 복사
+          if [ -d "temp_extract/RunfitApp" ]; then
+            cp -r temp_extract/RunfitApp/* temp_runfit/www/
+          elif [ -d "temp_extract/www" ]; then
+            cp -r temp_extract/www/* temp_runfit/www/
+          else
+            cp -r temp_extract/* temp_runfit/www/
+          fi
+          
+          rm -rf temp_extract
+          echo "Your web app copied successfully!"
+        else
+          echo "RunfitApp.zip not found - using default Cordova app"
         fi
         
-        echo "Temporary project created successfully"
+        # 기존 config.xml이 있다면 복사
+        if [ -f "config.xml" ]; then
+          echo "Copying your config.xml..."
+          cp config.xml temp_runfit/
+        fi
+        
+        echo "Project setup complete!"
+        echo "Contents of www folder:"
+        ls -la temp_runfit/www/
         
     - name: Build APK from temporary project
       run: |
