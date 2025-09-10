@@ -48,12 +48,12 @@
   "dependencies": {
     "cordova": "^12.0.0",
     "cordova-android": "^12.0.0",
-    "cordova-ios": "^7.0.0"
+    "cordova-ios": "^6.3.0"
   },
   "devDependencies": {
     "cordova": "^12.0.0",
     "cordova-android": "^12.0.0",
-    "cordova-ios": "^7.0.0"
+    "cordova-ios": "^6.3.0"
   },
   "cordova": {
     "platforms": [
@@ -72,8 +72,7 @@
       "cordova-plugin-media": {},
       "cordova-plugin-vibration": {},
       "cordova-plugin-network-information": {},
-      "cordova-plugin-statusbar": {},
-      "cordova-plugin-splashscreen": {}
+      "cordova-plugin-statusbar": {}
     }
   },
   "keywords": [
