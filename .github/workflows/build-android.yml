@@ -1,4 +1,4 @@
-name: Build RunFit App
+name: Build RunFit App (Simple)
 on:
   push:
     branches: [ main, develop ]
@@ -17,10 +17,9 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
-        cache: 'npm'
+        node-version: '18'
         
-    - name: Setup Java (for Android build)
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '17'
@@ -28,152 +27,80 @@ jobs:
         
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        api-level: 33
-        
-    - name: Accept Android SDK licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       
-    - name: Install Android build tools
-      run: |
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33"
-        
-    - name: Create basic icon file
-      run: |
-        mkdir -p www/img
-        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
-        
-    - name: Install Cordova globally
+    - name: Accept Android SDK licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+      
+    - name: Install Cordova
       run: npm install -g cordova@12.0.0
       
-    - name: Initialize npm and install dependencies
+    - name: Initialize project structure
       run: |
-        if [ ! -f package.json ]; then
-          npm init -y
-        fi
-        npm install
-        
-    - name: Create config.xml if not exists
-      run: |
-        if [ ! -f config.xml ]; then
-          cat > config.xml << 'EOF'
-        <?xml version='1.0' encoding='utf-8'?>
-        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-            <name>RunFit</name>
-            <description>RunFit Application</description>
-            <author email="dev@runfit.com" href="https://runfit.com">RunFit Team</author>
-            <content src="index.html" />
-            <access origin="*" />
-            <allow-intent href="http://*/*" />
-            <allow-intent href="https://*/*" />
-            <allow-intent href="tel:*" />
-            <allow-intent href="sms:*" />
-            <allow-intent href="mailto:*" />
-            <allow-intent href="geo:*" />
-            <platform name="android">
-                <allow-intent href="market:*" />
-                <preference name="AndroidXEnabled" value="true" />
-                <preference name="GradlePluginKotlinEnabled" value="true" />
-                <preference name="GradlePluginKotlinCodeStyle" value="official" />
-                <preference name="android-minSdkVersion" value="22" />
-                <preference name="android-targetSdkVersion" value="33" />
-                <preference name="android-compileSdkVersion" value="33" />
-            </platform>
-            <engine name="android" spec="^12.0.0" />
-        </widget>
+        # Create package.json
+        cat > package.json << 'EOF'
+        {
+          "name": "runfit-app",
+          "version": "1.0.0",
+          "description": "RunFit Mobile Application",
+          "main": "index.js",
+          "scripts": {
+            "test": "echo \"Error: no test specified\" && exit 1"
+          },
+          "keywords": ["cordova", "mobile", "app"],
+          "author": "RunFit Team",
+          "license": "MIT"
+        }
         EOF
-        fi
         
-    - name: Create basic index.html if not exists
-      run: |
-        if [ ! -f www/index.html ]; then
-          mkdir -p www
-          cat > www/index.html << 'EOF'
+        # Create www directory and basic HTML
+        mkdir -p www/img
+        cat > www/index.html << 'EOF'
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-            <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap:">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>RunFit</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    margin: 50px;
-                }
-                .app {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                }
-            </style>
         </head>
         <body>
-            <div class="app">
-                <h1>🏃‍♂️ RunFit App</h1>
-                <p>Welcome to RunFit!</p>
-                <p>Your fitness companion is ready to go.</p>
-            </div>
+            <h1>🏃‍♂️ RunFit</h1>
+            <p>Welcome to RunFit App!</p>
             <script src="cordova.js"></script>
-            <script>
-                document.addEventListener('deviceready', onDeviceReady, false);
-                function onDeviceReady() {
-                    console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
-                }
-            </script>
         </body>
         </html>
         EOF
-        fi
         
-    - name: Set Gradle JVM Args
-      run: |
-        mkdir -p ~/.gradle
-        echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> ~/.gradle/gradle.properties
-        echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
-        echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
-        echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
+        # Create basic icon
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" | base64 -d > www/img/icon.png
+        
+        # Create config.xml
+        cat > config.xml << 'EOF'
+        <?xml version='1.0' encoding='utf-8'?>
+        <widget id="com.runfit.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+            <name>RunFit</name>
+            <description>RunFit Application</description>
+            <author>RunFit Team</author>
+            <content src="index.html" />
+            <access origin="*" />
+            <platform name="android">
+                <preference name="android-minSdkVersion" value="22" />
+                <preference name="android-targetSdkVersion" value="33" />
+            </platform>
+        </widget>
+        EOF
         
     - name: Add Android platform
-      run: |
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        export JAVA_HOME=$JAVA_HOME_17_X64
-        cordova platform add android@12.0.0 --verbose
+      run: cordova platform add android
       
-    - name: Install plugins
-      run: |
-        cordova plugin add cordova-plugin-whitelist@1
-        cordova plugin add cordova-plugin-device@2
-        cordova plugin add cordova-plugin-geolocation@4
-        cordova plugin add cordova-plugin-dialogs@2
-        cordova plugin add cordova-plugin-file@6
-        cordova plugin add cordova-plugin-media@5
-        cordova plugin add cordova-plugin-vibration@3
-        cordova plugin add cordova-plugin-network-information@2
-        cordova plugin add cordova-plugin-statusbar@2
-        
-    - name: List platforms and plugins (debug)
-      run: |
-        cordova platform list
-        cordova plugin list
-        
-    - name: Build Android APK
-      run: |
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        export JAVA_HOME=$JAVA_HOME_17_X64
-        cordova build android --release --verbose
-        
-    - name: List build outputs (debug)
-      run: |
-        find . -name "*.apk" -type f
-        ls -la platforms/android/app/build/outputs/apk/release/ || echo "Release folder not found"
-        
-    - name: Upload Android APK
+    - name: Build Android
+      run: cordova build android
+      
+    - name: Find APK files
+      run: find . -name "*.apk" -type f
+      
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
-        if-no-files-found: error
+        path: "platforms/android/app/build/outputs/apk/**/*.apk"
+        if-no-files-found: warn
