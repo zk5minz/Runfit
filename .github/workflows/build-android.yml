@@ -1,4 +1,4 @@
-name: Build RunFit App (From ZIP)
+name: Build RunFit App (Fresh Approach)
 on:
   push:
     branches: [ main, develop ]
@@ -40,11 +40,7 @@ jobs:
           echo "Found RunfitApp.zip, extracting..."
           rm -rf www
           mkdir -p www
-          
           unzip -q RunfitApp.zip -d temp_extract
-          
-          echo "Extracted contents:"
-          find temp_extract -type f | head -20
           
           if [ -d "temp_extract/RunfitApp" ]; then
             cp -r temp_extract/RunfitApp/* www/
@@ -55,31 +51,9 @@ jobs:
           fi
           
           rm -rf temp_extract
-          
-          echo "Contents of www folder:"
-          ls -la www/
-          
-          if [ ! -f "www/index.html" ]; then
-            echo "Warning: index.html not found in www folder!"
-            echo "Creating basic index.html..."
-            cat > www/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>RunFit</title>
-        </head>
-        <body>
-            <h1>🏃‍♂️ RunFit</h1>
-            <p>웹앱 파일이 올바르게 추출되지 않았습니다.</p>
-            <script src="cordova.js"></script>
-        </body>
-        </html>
-        EOF
-          fi
+          echo "Web app extracted to www folder"
         else
-          echo "RunfitApp.zip not found, creating basic www structure..."
+          echo "RunfitApp.zip not found, creating basic structure..."
           mkdir -p www
           cat > www/index.html << 'EOF'
         <!DOCTYPE html>
@@ -91,7 +65,7 @@ jobs:
         </head>
         <body>
             <h1>🏃‍♂️ RunFit</h1>
-            <p>RunfitApp.zip 파일을 레포지토리 루트에 업로드해주세요!</p>
+            <p>RunfitApp.zip 파일을 업로드해주세요!</p>
             <script src="cordova.js"></script>
         </body>
         </html>
@@ -102,119 +76,62 @@ jobs:
       run: |
         mkdir -p www/img
         
-        cat > generate_icon.js << 'EOF'
-        const fs = require('fs');
+        # 간단한 PNG 아이콘 생성 (Base64)
+        echo "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANaSURBVFiFtZc7aBRBFIafTWIwphALwcJCG1sLG1sLbSy0sdDGQhsLbSy0sdDGQhsLbSy0sRDbWGhjYWOhjYU2FtpYaGOhjYU2FtpYaGOhjYU2FtpYaGOhjYU2FjYW2lhoY6GNhTYW2lhoY6GNhTYW2lhoY6GNhTYWNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FNhbaWGhjoY2FN" | base64 -d > www/img/icon.png
         
-        const runningIconSVG = `<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#4CAF50"/>
-              <stop offset="50%" style="stop-color:#2196F3"/>
-              <stop offset="100%" style="stop-color:#9C27B0"/>
-            </linearGradient>
-          </defs>
-          <circle cx="256" cy="256" r="240" fill="url(#bg)" stroke="#fff" stroke-width="16"/>
-          <ellipse cx="256" cy="410" rx="180" ry="20" fill="#fff" opacity="0.3"/>
-          <g fill="#fff" stroke="#fff" stroke-width="8" stroke-linecap="round">
-            <circle cx="256" cy="180" r="25"/>
-            <line x1="256" y1="205" x2="256" y2="320"/>
-            <line x1="256" y1="240" x2="220" y2="280"/>
-            <line x1="256" y1="240" x2="290" y2="220"/>
-            <line x1="256" y1="320" x2="230" y2="380"/>
-            <line x1="230" y1="380" x2="220" y2="400"/>
-            <line x1="256" y1="320" x2="280" y2="350"/>
-            <line x1="280" y1="350" x2="290" y2="380"/>
-          </g>
-          <g stroke="#fff" stroke-width="4" opacity="0.7">
-            <line x1="180" y1="200" x2="150" y2="190"/>
-            <line x1="180" y1="220" x2="140" y2="210"/>
-            <line x1="180" y1="240" x2="160" y2="235"/>
-          </g>
-          <text x="256" y="480" font-family="Arial" font-size="36" font-weight="bold" fill="#fff" text-anchor="middle">RunFit</text>
-        </svg>`;
-        
-        try {
-          fs.writeFileSync('www/img/icon.svg', runningIconSVG);
-          
-          const basicIcon = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-          const buffer = Buffer.from(basicIcon, 'base64');
-          fs.writeFileSync('www/img/icon.png', buffer);
-          
-          console.log('러닝 아이콘 생성 완료!');
-          
-        } catch (error) {
-          console.log('아이콘 생성 실패:', error.message);
-          const fallbackIcon = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-          const fallbackBuffer = Buffer.from(fallbackIcon, 'base64');
-          fs.writeFileSync('www/img/icon.png', fallbackBuffer);
-        }
-        EOF
-        
-        node generate_icon.js
-        
-        echo "아이콘 파일 확인:"
+        echo "아이콘 생성 완료"
         ls -la www/img/
         
-    - name: Check package.json
+    - name: Create temporary Cordova project
       run: |
+        # 아예 새로운 Cordova 프로젝트를 만드는 방법
+        echo "Creating new Cordova project..."
+        cordova create temp_runfit com.runfit.app RunFit
+        
+        # www 폴더 내용을 새 프로젝트로 복사
+        echo "Copying www contents..."
+        cp -r www/* temp_runfit/www/
+        
+        # config.xml도 복사
+        echo "Copying config.xml..."
+        cp config.xml temp_runfit/
+        
+        # package.json 정보도 복사
         if [ -f package.json ]; then
-          echo "Using existing package.json file:"
-          cat package.json | head -20
-        else
-          echo "package.json not found! This should not happen."
-          exit 1
+          cp package.json temp_runfit/
         fi
         
-    - name: Check config.xml
-      run: |
-        if [ -f config.xml ]; then
-          echo "Using existing config.xml file:"
-          cat config.xml
-        else
-          echo "config.xml not found! This should not happen."
-          exit 1
-        fi
+        echo "Temporary project created successfully"
         
-    - name: Install npm dependencies
+    - name: Build APK from temporary project
       run: |
-        if [ -f package.json ]; then
-          npm install
-        fi
+        cd temp_runfit
         
-    - name: Add Android platform and install plugins
-      run: |
+        # Android 플랫폼 추가
+        echo "Adding Android platform..."
         cordova platform add android
         
-        cordova plugin add cordova-plugin-whitelist
-        cordova plugin add cordova-plugin-device  
-        cordova plugin add cordova-plugin-geolocation --variable GPS_REQUIRED=true
-        cordova plugin add cordova-plugin-dialogs
-        cordova plugin add cordova-plugin-background-mode
-        cordova plugin add cordova-plugin-file
-        cordova plugin add cordova-plugin-media
-        cordova plugin add cordova-plugin-vibration
-        cordova plugin add cordova-plugin-network-information
-        cordova plugin add cordova-plugin-statusbar
+        # 플러그인 설치 (config.xml에서 자동으로)
+        echo "Installing plugins..."
+        cordova prepare
         
-    - name: Verify www folder structure
-      run: |
-        echo "Final www folder structure:"
-        find www -type f | head -20
+        # 빌드
+        echo "Building APK..."
+        cordova build android --release
         
-    - name: Build Android APK
-      run: |
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        export JAVA_HOME=$JAVA_HOME_17_X64
-        cordova build android --release --verbose
+        # APK 파일 확인
+        echo "Checking APK files..."
+        find . -name "*.apk" -type f
         
-    - name: List APK files
-      run: |
-        echo "Looking for APK files..."
-        find . -name "*.apk" -type f -exec ls -la {} \;
+        # APK 파일을 원래 위치로 복사
+        if [ -f "platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+          cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk ../
+          echo "APK copied to root directory"
+        fi
         
     - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
         name: runfit-android-apk
-        path: "platforms/android/app/build/outputs/apk/**/*.apk"
+        path: "*.apk"
         if-no-files-found: warn
