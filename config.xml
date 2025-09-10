@@ -32,6 +32,18 @@
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
         </config-file>
+        
+        <!-- Android 아이콘 설정 (기본 아이콘만 사용) -->
+        <icon src="www/img/icon.png" />
+        
+        <!-- Android 스플래시 스크린 설정 (네이티브 방식) -->
+        <preference name="SplashMaintainAspectRatio" value="true" />
+        <preference name="SplashShowOnlyFirstTime" value="false" />
+        <preference name="SplashScreen" value="screen" />
+        <preference name="SplashScreenDelay" value="3000" />
+        <preference name="AutoHideSplashScreen" value="true" />
+        <preference name="FadeSplashScreen" value="true" />
+        <preference name="FadeSplashScreenDuration" value="300" />
     </platform>
     
     <platform name="ios">
@@ -45,6 +57,17 @@
         <config-file target="*-Info.plist" parent="NSLocationAlwaysAndWhenInUseUsageDescription">
             <string>RunFit이 백그라운드에서도 러닝을 추적할 수 있도록 위치 권한이 필요합니다.</string>
         </config-file>
+        
+        <!-- iOS 아이콘 설정 (기본 아이콘만 사용) -->
+        <icon src="www/img/icon.png" />
+        
+        <!-- iOS 스플래시 스크린 설정 (네이티브 방식) -->
+        <preference name="AutoHideSplashScreen" value="true" />
+        <preference name="SplashScreenDelay" value="3000" />
+        <preference name="SplashMaintainAspectRatio" value="true" />
+        <preference name="SplashShowOnlyFirstTime" value="false" />
+        <preference name="FadeSplashScreen" value="true" />
+        <preference name="FadeSplashScreenDuration" value="300" />
     </platform>
     
     <!-- Global preferences -->
@@ -53,6 +76,9 @@
     <preference name="DisallowOverscroll" value="true" />
     <preference name="BackgroundMode" value="location" />
     <preference name="KeepRunning" value="true" />
+    <preference name="LoadingDialog" value="RunFit 로딩중..." />
+    <preference name="LoadUrlTimeoutValue" value="20000" />
+    <preference name="ErrorUrl" value="" />
     
     <!-- 러닝 앱에 필요한 플러그인들 -->
     <plugin name="cordova-plugin-whitelist" spec="1" />
@@ -65,56 +91,17 @@
     <plugin name="cordova-plugin-vibration" spec="3" />
     <plugin name="cordova-plugin-network-information" spec="2" />
     <plugin name="cordova-plugin-statusbar" spec="2" />
-    <plugin name="cordova-plugin-splashscreen" spec="5" />
+    <!-- cordova-plugin-splashscreen 제거 (호환성 문제로 인해) -->
     
-    <!-- 아이콘 및 스플래시 스크린 설정 -->
+    <!-- 기본 아이콘 설정 -->
     <icon src="www/img/icon.png" />
     
-    <!-- Android 아이콘 -->
-    <platform name="android">
-        <icon density="ldpi" src="www/res/icon/android/drawable-ldpi-icon.png" />
-        <icon density="mdpi" src="www/res/icon/android/drawable-mdpi-icon.png" />
-        <icon density="hdpi" src="www/res/icon/android/drawable-hdpi-icon.png" />
-        <icon density="xhdpi" src="www/res/icon/android/drawable-xhdpi-icon.png" />
-        <icon density="xxhdpi" src="www/res/icon/android/drawable-xxhdpi-icon.png" />
-        <icon density="xxxhdpi" src="www/res/icon/android/drawable-xxxhdpi-icon.png" />
-        
-        <!-- 스플래시 스크린 -->
-        <splash density="land-ldpi" src="www/res/splash/android/drawable-land-ldpi-screen.png" />
-        <splash density="land-mdpi" src="www/res/splash/android/drawable-land-mdpi-screen.png" />
-        <splash density="land-hdpi" src="www/res/splash/android/drawable-land-hdpi-screen.png" />
-        <splash density="land-xhdpi" src="www/res/splash/android/drawable-land-xhdpi-screen.png" />
-        <splash density="land-xxhdpi" src="www/res/splash/android/drawable-land-xxhdpi-screen.png" />
-        <splash density="land-xxxhdpi" src="www/res/splash/android/drawable-land-xxxhdpi-screen.png" />
-        <splash density="port-ldpi" src="www/res/splash/android/drawable-port-ldpi-screen.png" />
-        <splash density="port-mdpi" src="www/res/splash/android/drawable-port-mdpi-screen.png" />
-        <splash density="port-hdpi" src="www/res/splash/android/drawable-port-hdpi-screen.png" />
-        <splash density="port-xhdpi" src="www/res/splash/android/drawable-port-xhdpi-screen.png" />
-        <splash density="port-xxhdpi" src="www/res/splash/android/drawable-port-xxhdpi-screen.png" />
-        <splash density="port-xxxhdpi" src="www/res/splash/android/drawable-port-xxxhdpi-screen.png" />
-    </platform>
-    
-    <!-- iOS 아이콘 -->
-    <platform name="ios">
-        <icon height="57" src="www/res/icon/ios/icon.png" width="57" />
-        <icon height="114" src="www/res/icon/ios/icon@2x.png" width="114" />
-        <icon height="40" src="www/res/icon/ios/icon-40.png" width="40" />
-        <icon height="80" src="www/res/icon/ios/icon-40@2x.png" width="80" />
-        <icon height="120" src="www/res/icon/ios/icon-40@3x.png" width="120" />
-        <icon height="50" src="www/res/icon/ios/icon-50.png" width="50" />
-        <icon height="100" src="www/res/icon/ios/icon-50@2x.png" width="100" />
-        <icon height="60" src="www/res/icon/ios/icon-60.png" width="60" />
-        <icon height="120" src="www/res/icon/ios/icon-60@2x.png" width="120" />
-        <icon height="180" src="www/res/icon/ios/icon-60@3x.png" width="180" />
-        <icon height="72" src="www/res/icon/ios/icon-72.png" width="72" />
-        <icon height="144" src="www/res/icon/ios/icon-72@2x.png" width="144" />
-        <icon height="76" src="www/res/icon/ios/icon-76.png" width="76" />
-        <icon height="152" src="www/res/icon/ios/icon-76@2x.png" width="152" />
-        <icon height="167" src="www/res/icon/ios/icon-83.5@2x.png" width="167" />
-        <icon height="29" src="www/res/icon/ios/icon-small.png" width="29" />
-        <icon height="58" src="www/res/icon/ios/icon-small@2x.png" width="58" />
-        <icon height="87" src="www/res/icon/ios/icon-small@3x.png" width="87" />
-        <icon height="1024" src="www/res/icon/ios/icon-1024.png" width="1024" />
-    </platform>
+    <!-- 보안 설정 -->
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
     
 </widget>
